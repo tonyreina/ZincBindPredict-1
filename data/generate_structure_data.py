@@ -4,7 +4,7 @@ import sys
 import kirjava
 import atomium
 from tqdm import tqdm
-from common import structure_site_to_sample
+from common import structure_site_to_sample, sequence_site_to_sample
 from utilities import *
 
 API_URL = "https://api.zincbind.net/"
@@ -19,6 +19,12 @@ FAMILY_SITES_QUERY = """query familySites($family: String) {
         } } }
     } } }
 }"""
+
+# Python code to merge dict using a single
+# expression
+def Merge(dict1, dict2):
+    res = {**dict1, **dict2}
+    return res
 
 # Get options
 families = parse_data_args(sys.argv, clustering=False)
@@ -37,8 +43,16 @@ for family in families:
         # Positives
         for site in sites:
             try:
-                site = get_atomium_site(site)
-                sample = structure_site_to_sample(site)
+                atomium_site = get_atomium_site(site)
+                sample_struct = structure_site_to_sample(atomium_site)
+
+                sequence = site["chainInteractions"][0]["sequence"]
+                sample_seq = sequence_site_to_sample(sequence)
+
+                sample = Merge(sample_struct, sample_seq)
+
+                sample["pdb"] = site["id"]
+
                 if sample["ca_max"] <= 30: positives.append(sample)
             except Exception: failures.append(site["id"])
             pbar.update()
@@ -48,9 +62,16 @@ for family in families:
         while len(negatives) != len(positives):
             code = random.choice(all_codes)
             try:
-                site = get_random_atomium_site(code, family)
+                atomium_site = get_random_atomium_site(code, family)
                 if site:
-                    sample = structure_site_to_sample(site)
+                    sample_struct = structure_site_to_sample(atomium_site)
+
+                    sequence = site["chainInteractions"][0]["sequence"]
+                    sample_seq = sequence_site_to_sample(sequence)
+
+                    sample = Merge(sample_struct, sample_seq)
+                    sample["pdb"] = site["id"]
+
                     if sample["ca_max"] <= 30:
                         negatives.append(sample)
                         pbar.update()

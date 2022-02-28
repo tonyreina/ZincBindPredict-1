@@ -7,7 +7,7 @@ import math
 import numpy as np
 import sys
 sys.path.append("../zincbindpredict")
-from data.hydrophobicity import *
+from hydrophobicity import *
 
 def sequence_site_to_sample(sequence):
     """Takes a sequence site and turns it into a feature sample. The site will
@@ -43,6 +43,7 @@ def structure_site_to_sample(residues):
     for res1, res2 in combinations(residues, 2):
         alphas.append(res1.atom(name="CA").distance_to(res2.atom(name="CA")))
         betas.append(res1.atom(name="CB").distance_to(res2.atom(name="CB")))
+
     sample["ca_mean"] = round(sum(alphas) / len(alphas), 3)
     sample["ca_std"] = round(np.std(alphas), 3)
     sample["ca_min"] = round(min(alphas), 3)
